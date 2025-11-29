@@ -1,71 +1,136 @@
-// backend/controllers/itemController.js
 import Item from "../models/Item.js";
 
-// Create item
-export const createItem = async (req, res) => {
-  try {
-    const { type, title } = req.body;
-    if (!type || !title) return res.status(400).json({ error: "type and title are required" });
-
-    const newItem = new Item(req.body);
-    await newItem.save();
-    return res.status(201).json(newItem);
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: err.message });
-  }
-};
-
-// Get all items (with optional filters)
 export const getItems = async (req, res) => {
   try {
-    const { type, search } = req.query;
-    const filter = {};
-    if (type && (type === "lost" || type === "found")) filter.type = type;
+    const { type, search, category, status, userId } = req.query;
+    let filter = {};
+    
+    if (type) filter.type = type;
+    if (category) filter.category = category;
+    if (status) filter.status = status;
+    if (userId) filter.user = userId;
+    
     if (search) {
-      const q = new RegExp(search, "i");
-      filter.$or = [{ title: q }, { description: q }, { location: q }];
+      filter.$or = [
+        { title: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+        { location: { $regex: search, $options: "i" } },
+        { tags: { $in: [new RegExp(search, "i")] } }
+      ];
     }
-    const items = await Item.find(filter).sort({ createdAt: -1 });
-    return res.json(items);
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: err.message });
+    
+    const items = await Item.find(filter)
+      .populate("user", "name email phone")
+      .populate("claimedBy", "name email")
+      .sort({ createdAt: -1 });
+    res.json(items);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 
-// Get single item by id
+export const createItem = async (req, res) => {
+  try {
+    const item = new Item({ ...req.body, user: req.user._id });
+    const savedItem = await item.save();
+    const populatedItem = await Item.findById(savedItem._id).populate("user", "name email phone");
+    res.status(201).json(populatedItem);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
 export const getItem = async (req, res) => {
   try {
-    const item = await Item.findById(req.params.id);
-    if (!item) return res.status(404).json({ error: "Item not found" });
-    return res.json(item);
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: err.message });
+    const item = await Item.findById(req.params.id)
+      .populate("user", "name email phone")
+      .populate("claimedBy", "name email");
+    if (!item) return res.status(404).json({ message: "Item not found" });
+    res.json(item);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 
-// Update item
 export const updateItem = async (req, res) => {
   try {
-    const updated = await Item.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    if (!updated) return res.status(404).json({ error: "Item not found" });
-    return res.json(updated);
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: err.message });
+    const item = await Item.findById(req.params.id);
+    if (!item) return res.status(404).json({ message: "Item not found" });
+    
+    if (item.user.toString() !== req.user._id.toString() && req.user.role !== "admin") {
+      return res.status(403).json({ message: "Not authorized to update this item" });
+    }
+    
+    const updatedItem = await Item.findByIdAndUpdate(req.params.id, req.body, { new: true })
+      .populate("user", "name email phone");
+    res.json(updatedItem);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
   }
 };
 
-// Delete item
 export const deleteItem = async (req, res) => {
   try {
-    const deleted = await Item.findByIdAndDelete(req.params.id);
-    if (!deleted) return res.status(404).json({ error: "Item not found" });
-    return res.json({ message: "Item deleted" });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: err.message });
+    const item = await Item.findById(req.params.id);
+    if (!item) return res.status(404).json({ message: "Item not found" });
+    
+    if (item.user.toString() !== req.user._id.toString() && req.user.role !== "admin") {
+      return res.status(403).json({ message: "Not authorized to delete this item" });
+    }
+    
+    await Item.findByIdAndDelete(req.params.id);
+    res.json({ message: "Item deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const claimItem = async (req, res) => {
+  try {
+    const item = await Item.findById(req.params.id);
+    if (!item) return res.status(404).json({ message: "Item not found" });
+    
+    if (item.status !== "open") {
+      return res.status(400).json({ message: "Item is not available for claiming" });
+    }
+    
+    if (item.user.toString() === req.user._id.toString()) {
+      return res.status(400).json({ message: "You cannot claim your own item" });
+    }
+    
+    item.claimedBy = req.user._id;
+    item.status = "claimed";
+    item.claimDate = new Date();
+    
+    await item.save();
+    const populatedItem = await Item.findById(item._id)
+      .populate("user", "name email phone")
+      .populate("claimedBy", "name email");
+    
+    res.json(populatedItem);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getUserItems = async (req, res) => {
+  try {
+    const items = await Item.find({ user: req.user._id })
+      .populate("claimedBy", "name email")
+      .sort({ createdAt: -1 });
+    res.json(items);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getClaimedItems = async (req, res) => {
+  try {
+    const items = await Item.find({ claimedBy: req.user._id })
+      .populate("user", "name email phone")
+      .sort({ claimDate: -1 });
+    res.json(items);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };

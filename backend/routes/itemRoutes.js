@@ -1,13 +1,25 @@
-// backend/routes/itemRoutes.js
 import express from "express";
-import { createItem, getItems, getItem, updateItem, deleteItem } from "../controllers/itemController.js";
+import { 
+  createItem, 
+  getItems, 
+  getItem, 
+  updateItem, 
+  deleteItem,
+  claimItem,
+  getUserItems,
+  getClaimedItems
+} from "../controllers/itemController.js";
+import { protect } from "../middleware/auth.js";
 
 const router = express.Router();
 
-router.post("/", createItem);     // create
-router.get("/", getItems);        // list + filters
-router.get("/:id", getItem);      // get single
-router.put("/:id", updateItem);   // update
-router.delete("/:id", deleteItem);// delete
+router.get("/", getItems);
+router.get("/my-items", protect, getUserItems);
+router.get("/claimed", protect, getClaimedItems);
+router.get("/:id", getItem);
+router.post("/", protect, createItem);
+router.put("/:id", protect, updateItem);
+router.delete("/:id", protect, deleteItem);
+router.post("/:id/claim", protect, claimItem);
 
 export default router;

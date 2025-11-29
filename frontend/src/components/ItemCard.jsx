@@ -1,28 +1,91 @@
-import React from "react";
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { 
+  MapPinIcon, 
+  CalendarIcon, 
+  TagIcon,
+  UserIcon 
+} from '@heroicons/react/24/outline';
 
-const ItemCard = ({ item, onDelete }) => {
+const ItemCard = ({ item }) => {
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'open': return 'bg-green-100 text-green-800';
+      case 'claimed': return 'bg-yellow-100 text-yellow-800';
+      case 'returned': return 'bg-blue-100 text-blue-800';
+      case 'closed': return 'bg-gray-100 text-gray-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getTypeColor = (type) => {
+    return type === 'lost' 
+      ? 'bg-red-100 text-red-800' 
+      : 'bg-green-100 text-green-800';
+  };
+
   return (
-    <div style={{ border: "1px solid #ddd", borderRadius: 8, padding: 12, marginBottom: 12, display: "flex", gap: 12 }}>
-      <div style={{ width: 110, height: 80, background: "#f6f6f6", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 6 }}>
-        {item.image ? <img src={item.image} alt={item.title} style={{ maxWidth: "100%", maxHeight: "100%", borderRadius: 6 }} /> : <span style={{ color: "#888" }}>No image</span>}
-      </div>
-
-      <div style={{ flex: 1 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-          <h3 style={{ margin: 0 }}>{item.title}</h3>
-          <span style={{ fontSize: 13, color: "#fff", background: item.type === "lost" ? "#e63946" : "#2a9d8f", padding: "4px 8px", borderRadius: 6 }}>
-            {item.type.toUpperCase()}
-          </span>
+    <div className="card hover:shadow-lg transition-shadow">
+      {item.images && item.images.length > 0 && (
+        <div className="mb-4">
+          <img 
+            src={item.images[0]} 
+            alt={item.title}
+            className="w-full h-48 object-cover rounded-lg"
+          />
+        </div>
+      )}
+      
+      <div className="space-y-3">
+        <div className="flex justify-between items-start">
+          <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">
+            {item.title}
+          </h3>
+          <div className="flex space-x-2">
+            <span className={`px-2 py-1 text-xs font-medium rounded-full ${getTypeColor(item.type)}`}>
+              {item.type.toUpperCase()}
+            </span>
+            <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(item.status)}`}>
+              {item.status.toUpperCase()}
+            </span>
+          </div>
         </div>
 
-        <p style={{ margin: "6px 0" }}>{item.description || <em>No description</em>}</p>
-        <div style={{ fontSize: 13, color: "#555" }}>
-          <strong>Location:</strong> {item.location || "—"} • <strong>Status:</strong> {item.status}
+        <p className="text-gray-600 text-sm line-clamp-2">
+          {item.description}
+        </p>
+
+        <div className="space-y-2 text-sm text-gray-500">
+          <div className="flex items-center space-x-2">
+            <TagIcon className="h-4 w-4" />
+            <span className="capitalize">{item.category}</span>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <MapPinIcon className="h-4 w-4" />
+            <span>{item.location}</span>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <CalendarIcon className="h-4 w-4" />
+            <span>{new Date(item.createdAt).toLocaleDateString()}</span>
+          </div>
+          
+          {item.user && (
+            <div className="flex items-center space-x-2">
+              <UserIcon className="h-4 w-4" />
+              <span>By {item.user.name}</span>
+            </div>
+          )}
         </div>
 
-        <div style={{ marginTop: 8 }}>
-          <a href={`/edit/${item._id}`} style={{ marginRight: 12 }}>Edit</a>
-          <button onClick={() => onDelete(item._id)} style={{ color: "#c00", background: "transparent", border: "none", cursor: "pointer" }}>Delete</button>
+        <div className="pt-3 border-t">
+          <Link 
+            to={`/items/${item._id}`}
+            className="block w-full text-center bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            View Details
+          </Link>
         </div>
       </div>
     </div>
