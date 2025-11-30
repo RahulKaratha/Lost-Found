@@ -83,6 +83,7 @@ function AppRoutes() {
             </ProtectedRoute>
           } />
           <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/auth-success" element={<AuthCallback />} />
           <Route path="/verify-email" element={<EmailVerification />} />
           <Route path="/phone-setup" element={
             <ProtectedRoute>
