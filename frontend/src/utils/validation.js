@@ -59,6 +59,10 @@ export const validateTags = (tagsString) => {
   return tags.every(validateTag);
 };
 
+export const validateHiddenDetails = (hiddenDetails) => {
+  return hiddenDetails && hiddenDetails.trim().length >= 10 && hiddenDetails.trim().length <= 500;
+};
+
 // Comprehensive form validation
 export const validateUserRegistration = (formData) => {
   const errors = {};
@@ -121,6 +125,10 @@ export const validateItemForm = (formData) => {
     errors.tags = 'Each tag must be 30 characters or less';
   }
   
+  if (!validateHiddenDetails(formData.hiddenDetails)) {
+    errors.hiddenDetails = 'Hidden details must be between 10 and 500 characters';
+  }
+  
   return errors;
 };
 
@@ -152,6 +160,8 @@ export const getFieldError = (fieldName, value, formData = {}) => {
       return validateReward(value) ? '' : 'Reward must be a positive number up to $10,000';
     case 'tags':
       return validateTags(value) ? '' : 'Each tag must be 30 characters or less';
+    case 'hiddenDetails':
+      return validateHiddenDetails(value) ? '' : 'Hidden details must be between 10 and 500 characters';
     default:
       return '';
   }

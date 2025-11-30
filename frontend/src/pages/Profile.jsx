@@ -1,42 +1,93 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import API from '../api';
 import ItemCard from '../components/ItemCard';
 import HelperScore from '../components/HelperScore';
+import toast from 'react-hot-toast';
 import { PlusIcon, UserIcon, ClipboardDocumentListIcon } from '@heroicons/react/24/outline';
 
 const Profile = () => {
   const { user } = useAuth();
+  const { userId } = useParams();
+  const [profileUser, setProfileUser] = useState(null);
   const [activeTab, setActiveTab] = useState('myItems');
   const [myItems, setMyItems] = useState([]);
   const [claimedItems, setClaimedItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  const isOwnProfile = !userId || userId === user?._id;
+  const displayUser = isOwnProfile ? user : profileUser;
 
   useEffect(() => {
-    fetchUserData();
-  }, []);
+    if (user) {
+      fetchUserData();
+    }
+  }, [userId, user]);
 
   const fetchUserData = async () => {
     try {
       setLoading(true);
-      const [myItemsRes, claimedRes] = await Promise.all([
-        API.get('/items/my-items'),
-        API.get('/items/claimed')
-      ]);
-      setMyItems(myItemsRes.data);
-      setClaimedItems(claimedRes.data);
+      
+      if (isOwnProfile) {
+        const [myItemsRes, claimedRes] = await Promise.all([
+          API.get('/items/my-items'),
+          API.get('/items/claimed')
+        ]);
+        setMyItems(myItemsRes.data);
+        setClaimedItems(claimedRes.data);
+      } else {
+        // Fetch other user's profile and public items
+        try {
+          const [userRes, itemsRes] = await Promise.all([
+            API.get(`/auth/user/${userId}`),
+            API.get(`/items?userId=${userId}`)
+          ]);
+          setProfileUser(userRes.data);
+          setMyItems(itemsRes.data);
+          setClaimedItems([]); // Don't show claimed items for other users
+        } catch (apiError) {
+          console.error('API Error:', apiError);
+          if (apiError.response?.status === 404) {
+            setProfileUser(null);
+            setMyItems([]);
+          } else {
+            throw apiError;
+          }
+        }
+      }
     } catch (error) {
       console.error('Failed to fetch user data:', error);
+      toast.error('Failed to load profile data');
     } finally {
       setLoading(false);
     }
   };
 
-  const tabs = [
+  const tabs = isOwnProfile ? [
     { id: 'myItems', label: 'My Items', icon: ClipboardDocumentListIcon, count: myItems.length },
     { id: 'claimed', label: 'Claimed Items', icon: UserIcon, count: claimedItems.length }
+  ] : [
+    { id: 'myItems', label: 'Reported Items', icon: ClipboardDocumentListIcon, count: myItems.length }
   ];
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (!isOwnProfile && !profileUser) {
+    return (
+      <div className="max-w-4xl mx-auto text-center py-12">
+        <h1 className="text-2xl font-bold text-gray-900 mb-4">User Not Found</h1>
+        <p className="text-gray-600 mb-4">The user profile you're looking for doesn't exist.</p>
+        <Link to="/" className="btn-primary">Go Back Home</Link>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
@@ -48,9 +99,12 @@ const Profile = () => {
               <UserIcon className="h-8 w-8 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">{user?.name}</h1>
-              <p className="text-gray-600">{user?.email}</p>
-              {user?.role === 'admin' && (
+              <h1 className="text-2xl font-bold text-gray-900">{displayUser?.name}</h1>
+              <p className="text-gray-600">{displayUser?.email}</p>
+              {displayUser?.phone && (
+                <p className="text-gray-600">Phone: {displayUser.phone}</p>
+              )}
+              {displayUser?.role === 'admin' && (
                 <span className="inline-block px-2 py-1 bg-purple-100 text-purple-800 text-xs font-medium rounded-full mt-1">
                   Admin
                 </span>
@@ -58,13 +112,15 @@ const Profile = () => {
             </div>
           </div>
           
-          <Link 
-            to="/add"
-            className="btn-primary flex items-center space-x-2"
-          >
-            <PlusIcon className="h-4 w-4" />
-            <span>Report Item</span>
-          </Link>
+          {isOwnProfile && (
+            <Link 
+              to="/add"
+              className="btn-primary flex items-center space-x-2"
+            >
+              <PlusIcon className="h-4 w-4" />
+              <span>Report Item</span>
+            </Link>
+          )}
         </div>
       </div>
 
@@ -89,7 +145,7 @@ const Profile = () => {
           </div>
         </div>
         <div>
-          <HelperScore user={user} />
+          <HelperScore user={displayUser} />
         </div>
       </div>
 

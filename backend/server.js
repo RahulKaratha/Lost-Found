@@ -2,6 +2,8 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import session from "express-session";
+import { createServer } from 'http';
+import { Server } from 'socket.io';
 
 dotenv.config();
 
@@ -11,13 +13,24 @@ import itemRoutes from "./routes/itemRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import verificationRoutes from "./routes/verificationRoutes.js";
+import chatRoutes from "./routes/chatRoutes.js";
+import { initializeSocket } from './socket/socketHandler.js';
 
 const app = express();
+const server = createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: process.env.NODE_ENV === 'production' 
+      ? 'https://your-frontend-domain.com' 
+      : 'http://localhost:4174',
+    credentials: true
+  }
+});
 
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
     ? 'https://your-frontend-domain.com' 
-    : 'http://localhost:5173',
+    : 'http://localhost:4174',
   credentials: true
 }));
 
@@ -43,6 +56,10 @@ app.use("/api/items", itemRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/verification", verificationRoutes);
+app.use("/api/chat", chatRoutes);
+
+// Initialize Socket.IO
+initializeSocket(io);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK' });
@@ -51,8 +68,9 @@ app.get('/api/health', (req, res) => {
 const PORT = process.env.PORT || 5000;
 
 connectDB().then(() => {
-  app.listen(PORT, () => {
+  server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
+    console.log(`Socket.IO server initialized`);
   });
 }).catch(err => {
   console.error("Failed to start server:", err);

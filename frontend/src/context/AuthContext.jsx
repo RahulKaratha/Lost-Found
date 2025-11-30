@@ -6,7 +6,7 @@ const AuthContext = createContext();
 const authReducer = (state, action) => {
   switch (action.type) {
     case 'LOGIN_SUCCESS':
-      localStorage.setItem('token', action.payload.token);
+      sessionStorage.setItem('token', action.payload.token);
       return {
         ...state,
         user: action.payload,
@@ -15,7 +15,7 @@ const authReducer = (state, action) => {
         loading: false
       };
     case 'LOGOUT':
-      localStorage.removeItem('token');
+      sessionStorage.removeItem('token');
       return {
         ...state,
         user: null,
@@ -33,14 +33,14 @@ const authReducer = (state, action) => {
 export const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, {
     user: null,
-    token: localStorage.getItem('token'),
+    token: sessionStorage.getItem('token'),
     isAuthenticated: false,
     loading: true
   });
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    console.log('🔵 AuthContext - Token from localStorage:', token ? 'Present' : 'Missing');
+    const token = sessionStorage.getItem('token');
+    console.log('🔵 AuthContext - Token from sessionStorage:', token ? 'Present' : 'Missing');
     if (token) {
       // Set API header
       API.defaults.headers.common['Authorization'] = `Bearer ${token}`;
@@ -53,7 +53,7 @@ export const AuthProvider = ({ children }) => {
   const fetchUser = async () => {
     try {
       console.log('🔵 AuthContext - Fetching user profile');
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token');
       const response = await API.get('/auth/profile');
       console.log('🟢 AuthContext - User profile fetched:', response.data.email);
       dispatch({ type: 'LOGIN_SUCCESS', payload: { ...response.data, token } });

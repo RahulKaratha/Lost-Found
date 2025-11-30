@@ -48,7 +48,7 @@ export const register = async (req, res) => {
       }
     }
     
-    const userExists = await User.findOne({ email: email.toLowerCase() });
+    const userExists = await User.findOne({ email: email ? email.toLowerCase() : '' });
     if (userExists) {
       return res.status(400).json({ message: "User already exists" });
     }
@@ -94,11 +94,11 @@ export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
     
-    if (!email || !password) {
-      return res.status(400).json({ message: "Email and password are required" });
+    if (!email || !password || typeof email !== 'string' || typeof password !== 'string') {
+      return res.status(400).json({ message: "Valid email and password are required" });
     }
     
-    const user = await User.findOne({ email: email.toLowerCase() });
+    const user = await User.findOne({ email: email ? email.toLowerCase() : '' });
     if (user && (await user.comparePassword(password))) {
       const token = generateToken(user._id);
       res.json({
@@ -118,6 +118,18 @@ export const login = async (req, res) => {
 
 export const getProfile = async (req, res) => {
   res.json(req.user);
+};
+
+export const getUserById = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId).select('-password -verificationOTP -otpExpires');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
 export const verifyEmail = async (req, res) => {

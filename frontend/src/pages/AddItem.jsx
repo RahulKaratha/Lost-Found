@@ -44,9 +44,6 @@ const AddItem = () => {
 
   const validateForm = () => {
     const newErrors = validateItemForm(formData);
-    if (!formData.hiddenDetails.trim() || formData.hiddenDetails.trim().length < 10) {
-      newErrors.hiddenDetails = 'Hidden details must be at least 10 characters';
-    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -69,7 +66,8 @@ const AddItem = () => {
         reward: formData.reward ? parseFloat(formData.reward) : 0,
         dateLostFound: formData.dateLostFound ? new Date(formData.dateLostFound) : undefined
       };
-
+      
+      console.log('Submitting data:', submitData);
       await API.post('/items', submitData);
       toast.success('Item reported successfully!');
       navigate('/profile');

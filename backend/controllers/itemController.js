@@ -10,6 +10,11 @@ export const getItems = async (req, res) => {
     if (status) filter.status = status;
     if (userId) filter.user = userId;
     
+    // Exclude claimed items from general browsing unless specifically requested
+    if (!status && !userId) {
+      filter.status = { $ne: "claimed" };
+    }
+    
     if (search) {
       filter.$or = [
         { title: { $regex: search, $options: "i" } },
@@ -44,7 +49,11 @@ export const getItem = async (req, res) => {
   try {
     const item = await Item.findById(req.params.id)
       .populate("user", "name email phone")
-      .populate("claimedBy", "name email");
+      .populate("claimedBy", "name email")
+      .populate({
+        path: "claimAttempts.claimant",
+        select: "name email"
+      });
     if (!item) return res.status(404).json({ message: "Item not found" });
     res.json(item);
   } catch (error) {
@@ -98,6 +107,11 @@ export const claimItem = async (req, res) => {
       return res.status(400).json({ message: "You cannot claim your own item" });
     }
     
+    // For lost items, users cannot claim them - only the owner can mark as found
+    if (item.type === "lost") {
+      return res.status(400).json({ message: "Lost items cannot be claimed. Only the owner can mark them as found." });
+    }
+    
     item.claimedBy = req.user._id;
     item.claimerName = req.user.name;
     item.status = "claimed";
@@ -118,8 +132,45 @@ export const getUserItems = async (req, res) => {
   try {
     const items = await Item.find({ user: req.user._id })
       .populate("claimedBy", "name email")
+      .populate({
+        path: "claimAttempts.claimant",
+        select: "name email"
+      })
       .sort({ createdAt: -1 });
     res.json(items);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getPendingClaimRequests = async (req, res) => {
+  try {
+    const items = await Item.find({ 
+      user: req.user._id,
+      status: "open",
+      "claimAttempts.isVerified": false
+    })
+      .populate("claimAttempts.claimant", "name email")
+      .sort({ createdAt: -1 });
+    
+    const pendingRequests = [];
+    items.forEach(item => {
+      item.claimAttempts.forEach(attempt => {
+        if (!attempt.isVerified) {
+          pendingRequests.push({
+            item: {
+              _id: item._id,
+              title: item.title,
+              type: item.type,
+              category: item.category
+            },
+            claimAttempt: attempt
+          });
+        }
+      });
+    });
+    
+    res.json(pendingRequests);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

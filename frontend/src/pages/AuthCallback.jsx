@@ -22,7 +22,7 @@ const AuthCallback = () => {
     if (token) {
       console.log('🔵 AuthCallback - Processing token');
       // Store token
-      localStorage.setItem('token', token);
+      sessionStorage.setItem('token', token);
       
       toast.success('Successfully logged in with Google!');
       console.log('🟢 AuthCallback - Redirecting to home');

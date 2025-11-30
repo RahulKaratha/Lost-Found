@@ -1,7 +1,7 @@
 import express from "express";
 import passport from "passport";
 import jwt from "jsonwebtoken";
-import { register, login, getProfile, updateProfile, verifyEmail } from "../controllers/authController.js";
+import { register, login, getProfile, getUserById, updateProfile, verifyEmail } from "../controllers/authController.js";
 import { protect } from "../middleware/auth.js";
 
 const router = express.Router();
@@ -10,6 +10,7 @@ router.post("/register", register);
 router.post("/verify-email", verifyEmail);
 router.post("/login", login);
 router.get("/profile", protect, getProfile);
+router.get("/user/:userId", protect, getUserById);
 router.put("/profile", protect, updateProfile);
 
 // Google OAuth routes
@@ -47,13 +48,13 @@ router.get('/google/callback',
       // Redirect to frontend with token
       const frontendURL = process.env.NODE_ENV === 'production' 
         ? 'https://your-frontend-domain.com' 
-        : 'http://localhost:5173';
+        : 'http://localhost:4174';
       
       console.log('🔵 Redirecting to:', `${frontendURL}/auth/callback?token=${token}`);
       res.redirect(`${frontendURL}/auth/callback?token=${token}`);
     } catch (error) {
       console.error('🔴 OAuth callback error:', error);
-      res.redirect('http://localhost:5173/login?error=oauth_failed');
+      res.redirect('http://localhost:4174/login?error=oauth_failed');
     }
   }
 );
@@ -61,7 +62,7 @@ router.get('/google/callback',
 // Error handling for OAuth failures
 router.get('/google/failure', (req, res) => {
   console.log('🔴 Google OAuth failed');
-  res.redirect('http://localhost:5173/login?error=oauth_failed');
+  res.redirect('http://localhost:4174/login?error=oauth_failed');
 });
 
 export default router;

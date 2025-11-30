@@ -3,7 +3,8 @@ import {
   submitClaimVerification, 
   getVerificationChallenges,
   updateHelperScore,
-  getLeaderboard 
+  getLeaderboard,
+  approveClaimRequest 
 } from '../controllers/verificationController.js';
 import { protect } from '../middleware/auth.js';
 
@@ -13,5 +14,6 @@ router.post('/claim/:itemId', protect, submitClaimVerification);
 router.get('/challenges/:itemId', protect, getVerificationChallenges);
 router.post('/helper-score', protect, updateHelperScore);
 router.get('/leaderboard', getLeaderboard);
+router.post('/approve/:itemId/:claimAttemptId', protect, approveClaimRequest);
 
 export default router;
