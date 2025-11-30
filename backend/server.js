@@ -21,7 +21,7 @@ const server = createServer(app);
 const io = new Server(server, {
   cors: {
     origin: process.env.NODE_ENV === 'production' 
-      ? process.env.FRONTEND_URL || 'https://your-frontend-domain.com'
+      ? process.env.FRONTEND_URL || 'https://lost-found-nie.vercel.app'
       : 'http://localhost:5173',
     credentials: true
   }
@@ -29,7 +29,7 @@ const io = new Server(server, {
 
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? process.env.FRONTEND_URL || 'https://your-frontend-domain.com'
+    ? process.env.FRONTEND_URL || 'https://lost-found-nie.vercel.app'
     : 'http://localhost:5173',
   credentials: true
 }));
