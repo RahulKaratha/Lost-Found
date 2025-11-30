@@ -40,7 +40,10 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
+    console.log('🔵 AuthContext - Token from localStorage:', token ? 'Present' : 'Missing');
     if (token) {
+      // Set API header
+      API.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       fetchUser();
     } else {
       dispatch({ type: 'SET_LOADING', payload: false });
@@ -49,9 +52,13 @@ export const AuthProvider = ({ children }) => {
 
   const fetchUser = async () => {
     try {
+      console.log('🔵 AuthContext - Fetching user profile');
+      const token = localStorage.getItem('token');
       const response = await API.get('/auth/profile');
-      dispatch({ type: 'LOGIN_SUCCESS', payload: { ...response.data, token: state.token } });
+      console.log('🟢 AuthContext - User profile fetched:', response.data.email);
+      dispatch({ type: 'LOGIN_SUCCESS', payload: { ...response.data, token } });
     } catch (error) {
+      console.error('🔴 AuthContext - Profile fetch failed:', error);
       dispatch({ type: 'LOGOUT' });
     }
   };

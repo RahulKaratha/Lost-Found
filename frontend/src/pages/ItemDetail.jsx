@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import ClaimVerification from '../components/ClaimVerification';
+import HelperScore from '../components/HelperScore';
 import API from '../api';
 import toast from 'react-hot-toast';
 import { 
@@ -21,7 +23,7 @@ const ItemDetail = () => {
   const navigate = useNavigate();
   const [item, setItem] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [claiming, setClaiming] = useState(false);
+  const [showVerification, setShowVerification] = useState(false);
 
   useEffect(() => {
     fetchItem();
@@ -39,22 +41,19 @@ const ItemDetail = () => {
     }
   };
 
-  const handleClaim = async () => {
+  const handleClaimClick = () => {
     if (!isAuthenticated) {
       toast.error('Please login to claim items');
       navigate('/login');
       return;
     }
+    setShowVerification(true);
+  };
 
-    setClaiming(true);
-    try {
-      const response = await API.post(`/items/${id}/claim`);
-      setItem(response.data);
-      toast.success('Item claimed successfully! The owner will be notified.');
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to claim item');
-    } finally {
-      setClaiming(false);
+  const handleVerificationComplete = (verifiedItem) => {
+    setShowVerification(false);
+    if (verifiedItem) {
+      setItem(verifiedItem);
     }
   };
 
@@ -144,12 +143,22 @@ const ItemDetail = () => {
             <h1 className="text-3xl font-bold text-gray-900 mb-4">{item.title}</h1>
             
             {item.images && item.images.length > 0 && (
-              <div className="mb-6">
+              <div className="mb-6 relative">
                 <img 
                   src={item.images[0]} 
                   alt={item.title}
-                  className="w-full h-64 object-cover rounded-lg"
+                  className={`w-full h-64 object-cover rounded-lg transition-all duration-300 ${
+                    item.isPhotoBlurred !== false && !isOwner ? 'filter blur-sm hover:blur-none' : ''
+                  }`}
                 />
+                {item.isPhotoBlurred !== false && !isOwner && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 rounded-lg">
+                    <div className="bg-white bg-opacity-95 px-4 py-2 rounded-lg text-center">
+                      <p className="text-sm font-medium text-gray-800">Photo Hidden for Verification</p>
+                      <p className="text-xs text-gray-600 mt-1">Claim to see full image</p>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -176,20 +185,27 @@ const ItemDetail = () => {
           </div>
 
           {/* Claim Section */}
-          {canClaim && (
+          {canClaim && !showVerification && (
             <div className="card bg-blue-50 border-blue-200">
               <h3 className="text-lg font-semibold mb-2">Claim This Item</h3>
               <p className="text-gray-700 mb-4">
-                Do you think this is your {item.type} item? Click below to claim it.
+                Do you think this is your {item.type} item? You'll need to verify ownership.
               </p>
               <button
-                onClick={handleClaim}
-                disabled={claiming}
-                className="btn-primary disabled:opacity-50"
+                onClick={handleClaimClick}
+                className="btn-primary"
               >
-                {claiming ? 'Claiming...' : 'Claim This Item'}
+                Start Claim Verification
               </button>
             </div>
+          )}
+
+          {/* Verification Section */}
+          {showVerification && (
+            <ClaimVerification 
+              item={item} 
+              onVerificationComplete={handleVerificationComplete}
+            />
           )}
 
           {/* Claimed Info */}
@@ -236,31 +252,35 @@ const ItemDetail = () => {
           <div className="card">
             <h3 className="text-lg font-semibold mb-4">Contact Information</h3>
             <div className="space-y-3">
-              <div className="flex items-center space-x-2">
-                <UserIcon className="h-4 w-4 text-gray-400" />
-                <span>{item.user.name}</span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <UserIcon className="h-4 w-4 text-gray-400" />
+                  <span>{item.user.name}</span>
+                </div>
+                <HelperScore user={item.user} compact={true} />
               </div>
               
-              {(isOwner || isAdmin || item.status === 'open') && (
-                <>
-                  <div className="flex items-center space-x-2">
-                    <EnvelopeIcon className="h-4 w-4 text-gray-400" />
-                    <span>{item.contact || item.user.email}</span>
-                  </div>
-                  
-                  {item.user.phone && (
-                    <div className="flex items-center space-x-2">
-                      <PhoneIcon className="h-4 w-4 text-gray-400" />
-                      <span>{item.user.phone}</span>
-                    </div>
-                  )}
-                </>
+              <div className="flex items-center space-x-2">
+                <EnvelopeIcon className="h-4 w-4 text-gray-400" />
+                <span>{item.contact || item.user.email}</span>
+              </div>
+              
+              {item.user.phone && (
+                <div className="flex items-center space-x-2">
+                  <PhoneIcon className="h-4 w-4 text-gray-400" />
+                  <span>{item.user.phone}</span>
+                </div>
               )}
               
-              {!isOwner && !isAdmin && item.status !== 'open' && (
-                <p className="text-sm text-gray-500">Contact details hidden for claimed items</p>
-              )}
+
             </div>
+            
+            {/* Helper Score Display */}
+            {item.user && (
+              <div className="mt-4 pt-4 border-t">
+                <HelperScore user={item.user} />
+              </div>
+            )}
             
             {/* Admin-only claimed details */}
             {isAdmin && item.status === 'claimed' && item.claimedBy && (

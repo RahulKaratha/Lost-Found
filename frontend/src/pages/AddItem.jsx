@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { validateItemForm } from '../utils/validation';
 import API from '../api';
 import toast from 'react-hot-toast';
 
@@ -23,8 +24,12 @@ const AddItem = () => {
     location: '',
     contact: '',
     imageUrl: '',
-    tags: ''
+    tags: '',
+    dateLostFound: '',
+    reward: '',
+    hiddenDetails: ''
   });
+  const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -37,8 +42,22 @@ const AddItem = () => {
     }));
   };
 
+  const validateForm = () => {
+    const newErrors = validateItemForm(formData);
+    if (!formData.hiddenDetails.trim() || formData.hiddenDetails.trim().length < 10) {
+      newErrors.hiddenDetails = 'Hidden details must be at least 10 characters';
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+    
     setLoading(true);
 
     try {
@@ -46,7 +65,9 @@ const AddItem = () => {
         ...formData,
         tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
         contact: formData.contact || user.email,
-        images: formData.imageUrl ? [formData.imageUrl] : []
+        images: formData.imageUrl ? [formData.imageUrl] : [],
+        reward: formData.reward ? parseFloat(formData.reward) : 0,
+        dateLostFound: formData.dateLostFound ? new Date(formData.dateLostFound) : undefined
       };
 
       await API.post('/items', submitData);
@@ -109,10 +130,12 @@ const AddItem = () => {
               name="title"
               value={formData.title}
               onChange={handleChange}
-              className="input-field"
+              className={`input-field ${errors.title ? 'border-red-500' : ''}`}
               placeholder="Brief description of the item"
               required
+              maxLength={100}
             />
+            {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title}</p>}
           </div>
 
           <div>
@@ -124,10 +147,13 @@ const AddItem = () => {
               value={formData.description}
               onChange={handleChange}
               rows={4}
-              className="input-field"
+              className={`input-field ${errors.description ? 'border-red-500' : ''}`}
               placeholder="Detailed description including color, size, brand, etc."
               required
+              maxLength={1000}
             />
+            <div className="text-xs text-gray-500 mt-1">{formData.description.length}/1000 characters</div>
+            {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description}</p>}
           </div>
 
           <div>
@@ -139,10 +165,12 @@ const AddItem = () => {
               name="location"
               value={formData.location}
               onChange={handleChange}
-              className="input-field"
+              className={`input-field ${errors.location ? 'border-red-500' : ''}`}
               placeholder="Where was it lost/found?"
               required
+              maxLength={200}
             />
+            {errors.location && <p className="text-red-500 text-xs mt-1">{errors.location}</p>}
           </div>
 
           <div>
@@ -154,9 +182,10 @@ const AddItem = () => {
               name="contact"
               value={formData.contact}
               onChange={handleChange}
-              className="input-field"
+              className={`input-field ${errors.contact ? 'border-red-500' : ''}`}
               placeholder="Phone or email (optional)"
             />
+            {errors.contact && <p className="text-red-500 text-xs mt-1">{errors.contact}</p>}
             <p className="text-xs text-gray-500 mt-1">
               Leave empty to use your registered email
             </p>
@@ -176,6 +205,59 @@ const AddItem = () => {
             />
           </div>
 
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Date Lost/Found (Optional)
+              </label>
+              <input
+                type="date"
+                name="dateLostFound"
+                value={formData.dateLostFound}
+                onChange={handleChange}
+                className={`input-field ${errors.dateLostFound ? 'border-red-500' : ''}`}
+                max={new Date().toISOString().split('T')[0]}
+              />
+              {errors.dateLostFound && <p className="text-red-500 text-xs mt-1">{errors.dateLostFound}</p>}
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Reward ($) (Optional)
+              </label>
+              <input
+                type="number"
+                name="reward"
+                value={formData.reward}
+                onChange={handleChange}
+                className={`input-field ${errors.reward ? 'border-red-500' : ''}`}
+                placeholder="0"
+                min="0"
+                max="10000"
+                step="0.01"
+              />
+              {errors.reward && <p className="text-red-500 text-xs mt-1">{errors.reward}</p>}
+            </div>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Hidden Details for Verification *
+            </label>
+            <textarea
+              name="hiddenDetails"
+              value={formData.hiddenDetails}
+              onChange={handleChange}
+              rows={3}
+              className={`input-field ${errors.hiddenDetails ? 'border-red-500' : ''}`}
+              placeholder="Details only the true owner would know (e.g., what's inside, scratches, serial numbers)"
+              required
+              maxLength={500}
+            />
+            <p className="text-xs text-gray-500 mt-1">These details won't be shown publicly but will be used to verify claims.</p>
+            {errors.hiddenDetails && <p className="text-red-500 text-xs mt-1">{errors.hiddenDetails}</p>}
+          </div>
+          
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Tags
@@ -188,6 +270,7 @@ const AddItem = () => {
               className="input-field"
               placeholder="red, leather, wallet (comma separated)"
             />
+            <p className="text-xs text-gray-500 mt-1">Separate tags with commas. Max 30 characters per tag.</p>
           </div>
 
           <div className="flex space-x-4">

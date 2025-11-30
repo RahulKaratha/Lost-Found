@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import API from '../api';
 import ItemCard from '../components/ItemCard';
+import HelperScore from '../components/HelperScore';
 import { PlusIcon, UserIcon, ClipboardDocumentListIcon } from '@heroicons/react/24/outline';
 
 const Profile = () => {
@@ -67,21 +68,28 @@ const Profile = () => {
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="card text-center">
-          <div className="text-3xl font-bold text-blue-600">{myItems.length}</div>
-          <div className="text-gray-600">Items Reported</div>
-        </div>
-        <div className="card text-center">
-          <div className="text-3xl font-bold text-green-600">{claimedItems.length}</div>
-          <div className="text-gray-600">Items Claimed</div>
-        </div>
-        <div className="card text-center">
-          <div className="text-3xl font-bold text-purple-600">
-            {myItems.filter(item => item.status === 'returned').length}
+      {/* Stats and Helper Score */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="card text-center">
+              <div className="text-3xl font-bold text-blue-600">{myItems.length}</div>
+              <div className="text-gray-600">Items Reported</div>
+            </div>
+            <div className="card text-center">
+              <div className="text-3xl font-bold text-green-600">{claimedItems.length}</div>
+              <div className="text-gray-600">Items Claimed</div>
+            </div>
+            <div className="card text-center">
+              <div className="text-3xl font-bold text-purple-600">
+                {myItems.filter(item => item.status === 'returned').length}
+              </div>
+              <div className="text-gray-600">Items Returned</div>
+            </div>
           </div>
-          <div className="text-gray-600">Items Returned</div>
+        </div>
+        <div>
+          <HelperScore user={user} />
         </div>
       </div>
 

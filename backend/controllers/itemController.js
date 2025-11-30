@@ -99,6 +99,7 @@ export const claimItem = async (req, res) => {
     }
     
     item.claimedBy = req.user._id;
+    item.claimerName = req.user.name;
     item.status = "claimed";
     item.claimDate = new Date();
     

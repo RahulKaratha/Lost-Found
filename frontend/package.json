@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@heroicons/react": "^2.0.18",
+    "@react-oauth/google": "^0.12.2",
     "axios": "^1.7.7",
     "lost-found-portal": "file:..",
     "react": "^19.1.1",
