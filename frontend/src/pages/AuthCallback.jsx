@@ -9,34 +9,32 @@ const AuthCallback = () => {
   useEffect(() => {
     const token = searchParams.get('token');
     const error = searchParams.get('error');
-    
+
     console.log('🔵 AuthCallback - Token:', token ? 'Present' : 'Missing');
-    console.log('🔵 AuthCallback - Error:', error);
-    
+    console.log('🔵 AuthCallback - Error:', error || 'None');
+
     if (error) {
       toast.error('Google authentication failed');
-      navigate('/login');
+      navigate('/login', { replace: true });
       return;
     }
-    
+
     if (token) {
-      console.log('🔵 AuthCallback - Processing token');
-      // Store token in localStorage
+      console.log('🔵 AuthCallback - Processing token:', token);
+
+      // Save token
       localStorage.setItem('token', token);
-      
-      toast.success('Successfully logged in with Google!');
-      console.log('🟢 AuthCallback - Redirecting to home');
-      
-      // Simple redirect to home
-      setTimeout(() => {
-        window.location.href = '/';
-      }, 1000);
+
+      toast.success('Logged in successfully!');
+
+      // Redirect to home (let AuthContext load user)
+      navigate('/', { replace: true });
     } else {
       console.log('🔴 AuthCallback - No token found');
       toast.error('Authentication failed');
-      navigate('/login');
+      navigate('/login', { replace: true });
     }
-  }, [searchParams, navigate]);
+  }, [navigate, searchParams]);
 
   return (
     <div className="flex justify-center items-center min-h-screen">
