@@ -190,7 +190,7 @@ const Register = () => {
           
           <div className="flex justify-center">
             <button
-              onClick={() => window.location.href = 'http://localhost:5000/api/auth/google'}
+              onClick={() => window.location.href = `${import.meta.env.VITE_BACKEND_URL}/api/auth/google`}
               className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
             >
               <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">

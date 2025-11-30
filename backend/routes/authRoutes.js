@@ -47,14 +47,17 @@ router.get('/google/callback',
       
       // Redirect to frontend with token
       const frontendURL = process.env.NODE_ENV === 'production' 
-        ? 'https://your-frontend-domain.com' 
-        : 'http://localhost:4174';
+        ? process.env.FRONTEND_URL || 'https://your-frontend-domain.com'
+        : 'http://localhost:5173';
       
       console.log('🔵 Redirecting to:', `${frontendURL}/auth/callback?token=${token}`);
       res.redirect(`${frontendURL}/auth/callback?token=${token}`);
     } catch (error) {
       console.error('🔴 OAuth callback error:', error);
-      res.redirect('http://localhost:4174/login?error=oauth_failed');
+      const frontendURL = process.env.NODE_ENV === 'production' 
+        ? process.env.FRONTEND_URL || 'https://your-frontend-domain.com'
+        : 'http://localhost:5173';
+      res.redirect(`${frontendURL}/login?error=oauth_failed`);
     }
   }
 );
@@ -62,7 +65,10 @@ router.get('/google/callback',
 // Error handling for OAuth failures
 router.get('/google/failure', (req, res) => {
   console.log('🔴 Google OAuth failed');
-  res.redirect('http://localhost:4174/login?error=oauth_failed');
+  const frontendURL = process.env.NODE_ENV === 'production' 
+    ? process.env.FRONTEND_URL || 'https://your-frontend-domain.com'
+    : 'http://localhost:5173';
+  res.redirect(`${frontendURL}/login?error=oauth_failed`);
 });
 
 export default router;
