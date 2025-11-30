@@ -45,7 +45,7 @@ router.get(
     );
     
     // Send token to frontend via URL parameter
-    res.redirect(`https://lost-found-eta.vercel.app/auth/callback?token=${token}`);
+    res.redirect(`https://lost-found-eta.vercel.app/auth-success?token=${token}`);
   }
 );
 
