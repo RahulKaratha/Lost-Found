@@ -1,5 +1,6 @@
 import express from "express";
 import passport from "passport";
+import jwt from "jsonwebtoken";
 import { register, login, getProfile, getUserById, updateProfile, verifyEmail } from "../controllers/authController.js";
 import { protect } from "../middleware/auth.js";
 
@@ -33,12 +34,18 @@ router.get(
 router.get(
   "/google/callback",
   passport.authenticate("google", {
-    failureRedirect: "https://lost-found-eta.vercel.app/login",  // FIXED
-    session: true
+    failureRedirect: "https://lost-found-eta.vercel.app/login"
   }),
   (req, res) => {
-    // OAuth success → redirect to frontend home/dashboard
-    res.redirect("https://lost-found-eta.vercel.app"); // FIXED
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: req.user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+    
+    // Send token to frontend via URL parameter
+    res.redirect(`https://lost-found-eta.vercel.app/auth/callback?token=${token}`);
   }
 );
 
