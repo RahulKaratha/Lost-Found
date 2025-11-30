@@ -12,7 +12,9 @@ console.log('Client Secret:', process.env.GOOGLE_CLIENT_SECRET ? 'Present' : 'Mi
 passport.use(new GoogleStrategy({
   clientID: process.env.GOOGLE_CLIENT_ID,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  callbackURL: "/api/auth/google/callback"
+  callbackURL: process.env.NODE_ENV === 'production' 
+    ? 'https://lost-found-nie.onrender.com/api/auth/google/callback'
+    : '/api/auth/google/callback'
 }, async (accessToken, refreshToken, profile, done) => {
   console.log('🔵 Google OAuth callback triggered');
   console.log('Profile ID:', profile.id);
