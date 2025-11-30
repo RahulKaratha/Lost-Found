@@ -20,17 +20,23 @@ const app = express();
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: process.env.NODE_ENV === 'production' 
-      ? process.env.FRONTEND_URL || 'https://lost-found-nie.vercel.app'
-      : 'http://localhost:5173',
+    origin: [
+      'http://localhost:5173',
+      'https://lost-found-nie.vercel.app',
+      'https://lost-found-eta.vercel.app',
+      process.env.FRONTEND_URL
+    ].filter(Boolean),
     credentials: true
   }
 });
 
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? process.env.FRONTEND_URL || 'https://lost-found-nie.vercel.app'
-    : 'http://localhost:5173',
+  origin: [
+    'http://localhost:5173',
+    'https://lost-found-nie.vercel.app',
+    'https://lost-found-eta.vercel.app',
+    process.env.FRONTEND_URL
+  ].filter(Boolean),
   credentials: true
 }));
 

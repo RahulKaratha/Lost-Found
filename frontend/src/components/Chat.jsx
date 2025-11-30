@@ -19,7 +19,7 @@ const Chat = ({ itemId, onClose }) => {
     if (!token || !itemId) return;
 
     // Initialize socket connection
-    const newSocket = io(import.meta.env.VITE_BACKEND_URL, {
+    const newSocket = io('https://lost-found-nie.onrender.com', {
       auth: { token }
     });
 

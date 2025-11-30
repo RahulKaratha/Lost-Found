@@ -47,7 +47,7 @@ router.get('/google/callback',
       
       // Redirect to frontend with token
       const frontendURL = process.env.NODE_ENV === 'production' 
-        ? process.env.FRONTEND_URL || 'https://lost-found-nie.vercel.app'
+        ? process.env.FRONTEND_URL || 'https://lost-found-eta.vercel.app'
         : 'http://localhost:5173';
       
       console.log('🔵 Redirecting to:', `${frontendURL}/auth/callback?token=${token}`);
@@ -55,7 +55,7 @@ router.get('/google/callback',
     } catch (error) {
       console.error('🔴 OAuth callback error:', error);
       const frontendURL = process.env.NODE_ENV === 'production' 
-        ? process.env.FRONTEND_URL || 'https://lost-found-nie.vercel.app'
+        ? process.env.FRONTEND_URL || 'https://lost-found-eta.vercel.app'
         : 'http://localhost:5173';
       res.redirect(`${frontendURL}/login?error=oauth_failed`);
     }
@@ -66,7 +66,7 @@ router.get('/google/callback',
 router.get('/google/failure', (req, res) => {
   console.log('🔴 Google OAuth failed');
   const frontendURL = process.env.NODE_ENV === 'production' 
-    ? process.env.FRONTEND_URL || 'https://lost-found-nie.vercel.app'
+    ? process.env.FRONTEND_URL || 'https://lost-found-eta.vercel.app'
     : 'http://localhost:5173';
   res.redirect(`${frontendURL}/login?error=oauth_failed`);
 });
