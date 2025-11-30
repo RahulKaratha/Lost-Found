@@ -11,8 +11,8 @@ export const register = async (req, res) => {
     const { name, email, password, phone, dateOfBirth } = req.body;
     
     // Enhanced validation
-    if (!name || !email || !password) {
-      return res.status(400).json({ message: "Name, email and password are required" });
+    if (!name || !email || !password || !phone) {
+      return res.status(400).json({ message: "Name, email, password and phone number are required" });
     }
     
     if (name.trim().length < 2) {
@@ -29,12 +29,13 @@ export const register = async (req, res) => {
       return res.status(400).json({ message: "Email must end with @nie.ac.in" });
     }
     
-    // Phone validation if provided
-    if (phone && phone.trim()) {
-      const phoneRegex = /^[\+]?[1-9][\d]{0,3}[\s\-\.]?[\(]?[\d]{1,3}[\)]?[\s\-\.]?[\d]{1,4}[\s\-\.]?[\d]{1,4}[\s\-\.]?[\d]{0,9}$/;
-      if (!phoneRegex.test(phone.trim())) {
-        return res.status(400).json({ message: "Please enter a valid phone number" });
-      }
+    // Phone validation - now mandatory
+    if (!phone || !phone.trim()) {
+      return res.status(400).json({ message: "Phone number is required" });
+    }
+    const phoneRegex = /^[\+]?[1-9][\d]{0,3}[\s\-\.]?[\(]?[\d]{1,3}[\)]?[\s\-\.]?[\d]{1,4}[\s\-\.]?[\d]{1,4}[\s\-\.]?[\d]{0,9}$/;
+    if (!phoneRegex.test(phone.trim())) {
+      return res.status(400).json({ message: "Please enter a valid phone number" });
     }
     
     // Date of birth validation if provided
@@ -61,22 +62,20 @@ export const register = async (req, res) => {
       dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined
     });
     
-    // Generate and send OTP
-    const otp = generateOTP();
-    user.verificationOTP = otp;
-    user.otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    // Auto-verify user and generate token
+    user.isVerified = true;
     await user.save();
     
-    // Send verification email
-    const emailResult = await sendVerificationEmail(user.email, otp);
-    if (!emailResult.success) {
-      return res.status(500).json({ message: 'Failed to send verification email' });
-    }
-
+    const token = generateToken(user._id);
+    
     res.status(201).json({
-      message: 'Registration successful! Please check your email for verification code.',
-      userId: user._id,
-      email: user.email
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      phone: user.phone,
+      token,
+      message: 'Registration successful!'
     });
   } catch (error) {
     if (error.code === 11000) {
@@ -145,7 +144,7 @@ export const verifyEmail = async (req, res) => {
       return res.status(400).json({ message: 'OTP expired or invalid' });
     }
     
-    if (user.verificationOTP !== otp) {
+    if (user.verificationOTP !== otp.toString()) {
       return res.status(400).json({ message: 'Invalid OTP' });
     }
     

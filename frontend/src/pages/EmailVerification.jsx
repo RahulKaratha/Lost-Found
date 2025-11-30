@@ -25,7 +25,7 @@ const EmailVerification = () => {
       const response = await API.post('/auth/verify-email', { userId, otp });
       
       // Auto-login after verification
-      localStorage.setItem('token', response.data.token);
+      sessionStorage.setItem('token', response.data.token);
       toast.success('Email verified successfully!');
       navigate('/');
       window.location.reload(); // Refresh to update auth state

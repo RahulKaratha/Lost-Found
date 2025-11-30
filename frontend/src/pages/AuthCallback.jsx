@@ -25,11 +25,27 @@ const AuthCallback = () => {
       sessionStorage.setItem('token', token);
       
       toast.success('Successfully logged in with Google!');
-      console.log('🟢 AuthCallback - Redirecting to home');
+      console.log('🟢 AuthCallback - Checking user profile');
       
-      // Simple redirect without API call
-      setTimeout(() => {
-        window.location.href = '/';
+      // Check if user needs phone setup
+      setTimeout(async () => {
+        try {
+          const response = await fetch('http://localhost:5000/api/auth/profile', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          const userData = await response.json();
+          
+          if (!userData.phone) {
+            window.location.href = '/phone-setup';
+          } else {
+            window.location.href = '/';
+          }
+        } catch (error) {
+          console.error('Profile check failed:', error);
+          window.location.href = '/';
+        }
       }, 1000);
     } else {
       console.log('🔴 AuthCallback - No token found');

@@ -131,21 +131,18 @@ export const approveClaimRequest = async (req, res) => {
         attempt._id.toString() === claimAttemptId
       );
       
-      // Update claimer's helper score
-      const claimer = await User.findById(claimAttempt.claimant);
-      if (claimer) {
-        claimer.interactions.challengesCompleted += 1;
-        claimer.helperScore += 10;
-        item.claimerName = claimer.name;
-        await claimer.save();
-      }
-      
-      // Update reporter's helper score
+      // Update reporter's helper score for successful return
       const reporter = await User.findById(item.user);
       if (reporter) {
         reporter.interactions.itemsReturned += 1;
         reporter.helperScore += 15;
         await reporter.save();
+      }
+      
+      // Set claimer name without giving points
+      const claimer = await User.findById(claimAttempt.claimant);
+      if (claimer) {
+        item.claimerName = claimer.name;
       }
     } else {
       // Reject the claim

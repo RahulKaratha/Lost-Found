@@ -13,12 +13,13 @@ import EditItem from "./pages/EditItem";
 import Profile from "./pages/Profile";
 import AdminDashboard from "./pages/AdminDashboard";
 import ItemDetail from "./pages/ItemDetail";
+import PhoneSetup from "./pages/PhoneSetup";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AuthCallback from "./pages/AuthCallback";
 import EmailVerification from "./pages/EmailVerification";
 
 function AppRoutes() {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, user } = useAuth();
 
   if (loading) {
     return (
@@ -28,18 +29,33 @@ function AppRoutes() {
     );
   }
 
+  // Helper function to check if user needs phone setup
+  const needsPhoneSetup = isAuthenticated && user && (!user.phone || user.phone === '');
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       <main className="container mx-auto px-4 py-8">
         <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+          <Route path="/login" element={
+            isAuthenticated ? (
+              needsPhoneSetup ? <Navigate to="/phone-setup" replace /> : <Navigate to="/" replace />
+            ) : <Login />
+          } />
+          <Route path="/register" element={
+            isAuthenticated ? (
+              needsPhoneSetup ? <Navigate to="/phone-setup" replace /> : <Navigate to="/" replace />
+            ) : <Register />
+          } />
           <Route path="/" element={
-            isAuthenticated ? <Home /> : <Navigate to="/login" replace />
+            isAuthenticated ? (
+              needsPhoneSetup ? <Navigate to="/phone-setup" replace /> : <Home />
+            ) : <Navigate to="/login" replace />
           } />
           <Route path="/items/:id" element={
-            isAuthenticated ? <ItemDetail /> : <Navigate to="/login" replace />
+            isAuthenticated ? (
+              needsPhoneSetup ? <Navigate to="/phone-setup" replace /> : <ItemDetail />
+            ) : <Navigate to="/login" replace />
           } />
           <Route path="/add" element={
             <ProtectedRoute>
@@ -68,6 +84,11 @@ function AppRoutes() {
           } />
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/verify-email" element={<EmailVerification />} />
+          <Route path="/phone-setup" element={
+            <ProtectedRoute>
+              <PhoneSetup />
+            </ProtectedRoute>
+          } />
         </Routes>
       </main>
     </div>

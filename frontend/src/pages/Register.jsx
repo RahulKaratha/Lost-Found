@@ -51,13 +51,12 @@ const Register = () => {
     const { confirmPassword, ...userData } = formData;
     try {
       const response = await API.post('/auth/register', userData);
-      toast.success('Registration successful! Please check your email.');
-      navigate('/verify-email', { 
-        state: { 
-          userId: response.data.userId, 
-          email: response.data.email 
-        } 
-      });
+      
+      // Auto-login after registration
+      sessionStorage.setItem('token', response.data.token);
+      toast.success(response.data.message || 'Registration successful!');
+      navigate('/');
+      window.location.reload();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Registration failed');
     }
@@ -112,7 +111,7 @@ const Register = () => {
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Phone (Optional)
+              Phone Number *
             </label>
             <input
               type="tel"
@@ -121,6 +120,7 @@ const Register = () => {
               onChange={handleChange}
               className={`input-field ${errors.phone ? 'border-red-500' : ''}`}
               placeholder="+1234567890 or (123) 456-7890"
+              required
             />
             {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
           </div>

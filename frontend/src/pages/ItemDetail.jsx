@@ -35,14 +35,6 @@ const ItemDetail = () => {
   const fetchItem = async () => {
     try {
       const response = await API.get(`/items/${id}`);
-      console.log('=== ITEM FETCH DEBUG ===');
-      console.log('Full item data:', response.data);
-      console.log('Claim attempts array:', response.data.claimAttempts);
-      console.log('Claim attempts length:', response.data.claimAttempts?.length || 0);
-      console.log('Current user ID:', user?._id);
-      console.log('Item owner ID:', response.data.user?._id);
-      console.log('Is owner?', user?._id === response.data.user?._id);
-      console.log('========================');
       setItem(response.data);
     } catch (error) {
       toast.error('Item not found');
@@ -116,19 +108,10 @@ const ItemDetail = () => {
   const isItemClaimed = item.status === 'claimed';
   const isAdmin = user && user.role === 'admin';
   
-  // Debug logs
-  console.log('isOwner:', isOwner);
-  console.log('user._id:', user?._id);
-  console.log('item.user._id:', item.user._id);
-  console.log('claimAttempts:', item.claimAttempts);
-  
   const hasPendingClaims = item.claimAttempts && item.claimAttempts.some(attempt => !attempt.isVerified);
   const userHasClaimRequest = item.claimAttempts && item.claimAttempts.some(
     attempt => attempt.claimant && attempt.claimant._id === user?._id
   );
-  
-  console.log('hasPendingClaims:', hasPendingClaims);
-  console.log('userHasClaimRequest:', userHasClaimRequest);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -148,51 +131,7 @@ const ItemDetail = () => {
 
   return (
     <div className="max-w-4xl mx-auto">
-      {/* Debug Section - Moved to top for visibility */}
-      {user && (
-        <div className="card bg-red-50 border-red-200 mb-6">
-          <h3 className="text-lg font-semibold mb-2 text-red-800">🔧 DEBUG INFO (Remove after testing)</h3>
-          <div className="text-sm space-y-1">
-            <p><strong>User ID:</strong> {user._id}</p>
-            <p><strong>Item Owner ID:</strong> {item.user._id}</p>
-            <p><strong>Is Owner:</strong> {isOwner ? 'Yes' : 'No'}</p>
-            <p><strong>Claim Attempts:</strong> {item.claimAttempts ? item.claimAttempts.length : 0}</p>
-            <p><strong>Has Pending Claims:</strong> {hasPendingClaims ? 'Yes' : 'No'}</p>
-            <p><strong>User Has Claim Request:</strong> {userHasClaimRequest ? 'Yes' : 'No'}</p>
-            {item.claimAttempts && item.claimAttempts.length > 0 && (
-              <div>
-                <p><strong>Claim Attempts Details:</strong></p>
-                {item.claimAttempts.map((attempt, idx) => (
-                  <div key={idx} className="ml-4 text-xs">
-                    <p>Attempt {idx + 1}: Claimant ID: {attempt.claimant?._id || attempt.claimant}, Verified: {attempt.isVerified ? 'Yes' : 'No'}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-          {!isOwner && item.type === 'found' && (
-            <button 
-              onClick={async () => {
-                try {
-                  const response = await API.post(`/verification/claim/${item._id}`, {
-                    hiddenDetails: 'Test claim for debugging',
-                    challengeAnswers: []
-                  });
-                  if (response.data.success) {
-                    toast.success('Test claim added!');
-                    fetchItem();
-                  }
-                } catch (error) {
-                  toast.error('Failed to add test claim');
-                }
-              }}
-              className="mt-2 px-3 py-1 bg-blue-500 text-white text-xs rounded"
-            >
-              Add Test Claim
-            </button>
-          )}
-        </div>
-      )}
+
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Content */}
@@ -234,10 +173,10 @@ const ItemDetail = () => {
                   src={item.images[0]} 
                   alt={item.title}
                   className={`w-full h-64 object-cover rounded-lg transition-all duration-300 ${
-                    item.isPhotoBlurred !== false && !isOwner ? 'filter blur-sm hover:blur-none' : ''
+                    item.isPhotoBlurred !== false && !isOwner && item.type === 'found' ? 'filter blur-sm hover:blur-none' : ''
                   }`}
                 />
-                {item.isPhotoBlurred !== false && !isOwner && (
+                {item.isPhotoBlurred !== false && !isOwner && item.type === 'found' && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 rounded-lg">
                     <div className="bg-white bg-opacity-95 px-4 py-2 rounded-lg text-center">
                       <p className="text-sm font-medium text-gray-800">Photo Hidden for Verification</p>
@@ -346,12 +285,11 @@ const ItemDetail = () => {
                           <Link 
                             to={`/profile/${attempt.claimant._id}`} 
                             className="text-blue-600 hover:underline ml-1"
-                            onClick={() => console.log('Navigating to profile:', attempt.claimant._id)}
                           >
                             {attempt.claimant.name || 'Unknown'}
                           </Link>
                         ) : (
-                          <span className="ml-1">{attempt.claimant?.name || 'Unknown'} (ID: {JSON.stringify(attempt.claimant)})</span>
+                          <span className="ml-1">{attempt.claimant?.name || 'Unknown'}</span>
                         )}
                       </p>
                       <p className="text-sm text-gray-600">Email: {attempt.claimant?.email || 'N/A'}</p>
