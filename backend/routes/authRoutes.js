@@ -22,43 +22,9 @@ router.get('/google', (req, res, next) => {
 }, passport.authenticate('google', { scope: ['profile', 'email'] }));
 
 router.get('/google/callback',
-  (req, res, next) => {
-    console.log('🔵 Google OAuth callback received');
-    console.log('Query params:', req.query);
-    next();
-  },
-  passport.authenticate('google', { 
-    failureRedirect: '/login',
-    failureFlash: true
-  }),
+  passport.authenticate('google', { failureRedirect: '/' }),
   (req, res) => {
-    console.log('🟢 Google OAuth success');
-    console.log('User:', req.user ? req.user.email : 'No user');
-    
-    try {
-      // Generate JWT token
-      const token = jwt.sign(
-        { userId: req.user._id },
-        process.env.JWT_SECRET,
-        { expiresIn: '7d' }
-      );
-      
-      console.log('🟢 JWT token generated');
-      
-      // Redirect to frontend with token
-      const frontendURL = process.env.NODE_ENV === 'production' 
-        ? process.env.FRONTEND_URL || 'https://lost-found-eta.vercel.app'
-        : 'http://localhost:5173';
-      
-      console.log('🔵 Redirecting to:', `${frontendURL}/auth/callback?token=${token}`);
-      res.redirect(`${frontendURL}/auth/callback?token=${token}`);
-    } catch (error) {
-      console.error('🔴 OAuth callback error:', error);
-      const frontendURL = process.env.NODE_ENV === 'production' 
-        ? process.env.FRONTEND_URL || 'https://lost-found-eta.vercel.app'
-        : 'http://localhost:5173';
-      res.redirect(`${frontendURL}/login?error=oauth_failed`);
-    }
+    res.redirect('https://lost-found-eta.vercel.app');
   }
 );
 
